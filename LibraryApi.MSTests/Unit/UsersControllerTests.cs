@@ -23,6 +23,7 @@ public class UsersControllerTests
         return db;
     }
 
+    //  registrar usuario cuando el email no existe.
     [TestMethod]
     public async Task Register_ReturnsCreated_WhenEmailIsNew()
     {
@@ -32,24 +33,32 @@ public class UsersControllerTests
         var dto = new UserRegisterDto { FullName = "Test", Email = "test@example.com", Password = "Secreto123" };
         var result = await controller.Register(dto);
 
-        var created = result.Result as CreatedAtActionResult;
+        var created = result.Result as CreatedAtActionResult;  // Debe ser 201
         Assert.IsNotNull(created);
+
+        // El body devuelto es un UserResponseDto sin contraseña.
         var payload = created!.Value as UserResponseDto;
         Assert.IsNotNull(payload);
         Assert.AreEqual("test@example.com", payload!.Email);
     }
 
+    // Error esperado: 409 Conflict cuando el email ya existe.
     [TestMethod]
     public async Task Register_ReturnsConflict_WhenEmailExists()
     {
         using var db = NewContext();
+
+        // Seed: usuario con email duplicado.
         db.Users.Add(new User { FullName = "X", Email = "dup@example.com", PasswordHash = "hash" });
         await db.SaveChangesAsync();
 
         var controller = new UsersController(db);
+
         var dto = new UserRegisterDto { FullName = "Y", Email = "dup@example.com", Password = "Otro123" };
 
         var result = await controller.Register(dto);
+
+        // El ActionResult debe ser ConflictObjectResult (409).
         Assert.IsInstanceOfType(result.Result, typeof(ConflictObjectResult));
     }
 }

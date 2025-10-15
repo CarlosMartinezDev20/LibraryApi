@@ -31,17 +31,21 @@ public class UsersEndpointsTests
         _factory?.Dispose();
     }
 
+    //  registrar un usuario y esperar 201.
     [TestMethod]
     public async Task Register_Returns_201()
     {
+        // Email único para evitar 409 entre ejecuciones.
         var dto = new UserRegisterDto
         {
             FullName = "Carlos Pruebas",
-            Email = $"carlos.{Guid.NewGuid():N}@example.com", // evita 409 al repetir
+            Email = $"carlos.{Guid.NewGuid():N}@example.com",
             Password = "Secreto123"
         };
 
         var resp = await _client.PostAsJsonAsync("/api/users/register", dto);
+
+        // Debe devolver 201 Created si el registro es correcto.
         Assert.AreEqual(HttpStatusCode.Created, resp.StatusCode, await resp.Content.ReadAsStringAsync());
     }
 }
